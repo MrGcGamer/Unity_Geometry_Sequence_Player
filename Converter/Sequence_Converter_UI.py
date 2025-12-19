@@ -27,6 +27,7 @@ class ConverterUI:
     decimation_percentage_ID = 0
     save_normals_ID = 0
     generate_normals_ID = 0
+    skip_alpha_channel_ID = 0
 
     ### +++++++++++++++++++++++++  PACKAGE INTO SINGLE EXECUTABLE ++++++++++++++++++++++++++++++++++
     #Use this prompt in the terminal to package this script into a single executable for your system
@@ -57,6 +58,7 @@ class ConverterUI:
     convertToSRGB = False
     decimatePointcloud = False
     generateNormals = False
+    skipAlphaChannel = False
     save_normals = False
     decimatePercentage = 100
     mergePoints = False
@@ -113,6 +115,10 @@ class ConverterUI:
         dpg.set_value(self.save_normals_ID, app_data)
         self.write_settings_string("generateNormals", str(app_data))
 
+    def set_Skip_Alpha_Channel_cb(self, sender, app_data):
+        self.skipAlphaChannel = app_data
+        self.write_settings_string("skipAlphaChannel", str(app_data))
+
     def set_normals_enabled_cb(self, sender, app_data):
         self.save_normals = app_data
         self.write_settings_string("saveNormals", str(app_data))
@@ -166,6 +172,7 @@ class ConverterUI:
         convertSettings.decimatePercentage = self.decimatePercentage
         convertSettings.saveNormals = self.save_normals
         convertSettings.generateNormals = self.generateNormals
+        convertSettings.skipAlphaChannel = self.skipAlphaChannel
         convertSettings.mergePoints = self.mergePoints
         convertSettings.mergeDistance = self.mergeDistance
 
@@ -471,6 +478,7 @@ class ConverterUI:
                     self.merge_distance_ID = dpg.add_input_float(label= " ", default_value=self.mergeDistance , callback=self.set_Merge_Distance_cb, min_value=0, width= 200)
 
                 self.generate_normals_ID = dpg.add_checkbox(label= "Estimate normals", default_value=self.generateNormals, callback=self.set_Generate_Normals_enabled_cb)
+                self.skip_alpha_channel_ID = dpg.add_checkbox(label= "Don't export Alpha channel", default_value=self.skipAlphaChannel, callback=self.set_Skip_Alpha_Channel_cb)
 
             dpg.add_spacer(height=5)
 
