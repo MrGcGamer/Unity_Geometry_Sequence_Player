@@ -54,6 +54,13 @@ class SequenceConverter:
     lastAverageNormal = [0, 0, 0]
     firstEstimation = True
 
+    def lockLoadMeshLock(self):
+        if not self.debugMode:
+            self.loadMeshLock.acquire()
+    def unlockLoadMeshLock(self):
+        if not self.debugMode:
+            self.loadMeshLock.release()
+
     def start_conversion(self, convertSettings, processFinishedCB):
 
         self.convertSettings = convertSettings
@@ -137,19 +144,18 @@ class SequenceConverter:
 
         ms = ml.MeshSet()
 
-        if not self.debugMode:
-            self.loadMeshLock.acquire() # If we don't lock the mesh loading process, crashes might occur
+        self.lockLoadMeshLock() # If we don't lock the mesh loading process, crashes might occur
 
         try:
             ms.load_new_mesh(inputfile)
         except:
-            self.loadMeshLock.release()
+            self.unlockLoadMeshLock()
             self.processFinishedCB(True, "Error opening file: " + inputfile)
             return
 
         if(self.terminateProcessing):
             self.processFinishedCB(False, "")
-            self.loadMeshLock.release()
+            self.unlockLoadMeshLock()
             return
 
         faceCount = len(ms.current_mesh().face_matrix())
@@ -172,11 +178,11 @@ class SequenceConverter:
             if(self.convertSettings.hasUVs != uvs):
                 # The sequence has different attributes, which is not allowed
                 self.processFinishedCB(True, "Error: Some frames with UVs, some without. All frames need to be consistent with this attribute!")
-                self.loadMeshLock.release()
+                self.unlockLoadMeshLock()
                 return
             if(self.convertSettings.isPointcloud != pointcloud):
                 self.processFinishedCB(True, "Error: Some frames are Pointclouds, some are meshes. Mixed sequences are not allowed!")
-                self.loadMeshLock.release()
+                self.unlockLoadMeshLock()
                 return
 
         if(self.convertSettings.mergePoints):
@@ -233,7 +239,7 @@ class SequenceConverter:
 
         if(self.terminateProcessing):
             self.processFinishedCB(False, "")
-            self.loadMeshLock.release()
+            self.unlockLoadMeshLock()
             return
 
         vertices = None
@@ -274,11 +280,10 @@ class SequenceConverter:
 
         if(self.terminateProcessing):
             self.processFinishedCB(False, "")
-            self.loadMeshLock.release()
+            self.unlockLoadMeshLock()
             return
 
-        if not self.debugMode:
-            self.loadMeshLock.release()
+        self.unlockLoadMeshLock()
 
         #The meshlab exporter doesn't support all the features we need, so we export the files manually
         #to PLY with our very stringent structure. This is needed because we want to keep the
