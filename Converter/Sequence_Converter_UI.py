@@ -12,6 +12,7 @@ from tkinter.filedialog import askdirectory
 import dearpygui.dearpygui as dpg
 from Sequence_Converter import SequenceConverter
 from Sequence_Converter import SequenceConverterSettings
+from Sequence_Metadata import MetaData
 
 class ConverterUI:
 
@@ -173,11 +174,13 @@ class ConverterUI:
             self.preProcessRequired = True
         else:
             self.preprocessFileCount = 0
+            self.preProcessRequired = False
 
         self.processedFileCount = 0        
         self.totalFileCount = self.geoFileCount + self.imageFileCount + self.preprocessFileCount
 
         convertSettings = SequenceConverterSettings()
+        convertSettings.metaData = MetaData()
         convertSettings.modelPaths = self.modelPathList
         convertSettings.imagePaths = self.imagePathList
         convertSettings.inputPath = self.inputSequencePath
@@ -202,6 +205,7 @@ class ConverterUI:
             self.converter.start_preprocessing()
 
         else:
+            self.info_text_set("Starting conversion...")
             self.process_models()
 
         self.set_progressbar(0)
@@ -233,14 +237,13 @@ class ConverterUI:
             self.info_text_set("Error occurred during conversion: ")
 
         else:
-            if(self.terminationSignal.is_set() == False):
+            termSig = self.terminationSignal.is_set()
+            if(termSig == False):
                 self.set_progressbar(self.processedFileCount / self.totalFileCount)
 
                 status = "Converting"
                 if(self.processedFileCount <= self.preprocessFileCount):
                     status = "Preprocessing"
-
-
 
                 self.info_text_set("Progress: {percentage} % ({mode}) ".format(percentage = str(int((self.processedFileCount / self.totalFileCount) * 100)), mode = status))
 
@@ -294,10 +297,14 @@ class ConverterUI:
     def open_file_dialog(self, path):
         Tk().withdraw() # we don't want a full GUI, so keep the root window from appearing
 
-        if(path is None):
-            new_input_path = askdirectory()
-        else:
-            new_input_path = askdirectory(initialdir=path, )
+        try:
+            if(path is None):
+                new_input_path = askdirectory()
+            else:
+                new_input_path = askdirectory(initialdir=path, )
+
+        except Exception as e:
+            return ""
 
         return new_input_path
 
@@ -475,8 +482,8 @@ class ConverterUI:
         dpg.set_value(self.srgb_check_ID, enabled)
 
     def set_viewport_height(self, pointcloud_settings, texture_settings):
-        default_viewport_height = 470
-        pointcloud_settings_height = 90
+        default_viewport_height = 490
+        pointcloud_settings_height = 70
         textures_settings_height = 70
 
         height = default_viewport_height
@@ -518,6 +525,7 @@ class ConverterUI:
             dpg.add_spacer(height=30)
 
             dpg.add_text("General settings:")
+            self.use_compression_ID = dpg.add_checkbox(label= "Use Compression", default_value=self.useCompression, callback=self.set_Use_Compression_cb)
             self.save_normals_ID = dpg.add_checkbox(label="Save normals", default_value=self.save_normals, callback=self.set_normals_enabled_cb)
 
             dpg.add_spacer(height=5)
@@ -533,7 +541,6 @@ class ConverterUI:
                     self.merge_distance_ID = dpg.add_input_float(label= " ", default_value=self.mergeDistance , callback=self.set_Merge_Distance_cb, min_value=0, width= 200)
 
                 self.generate_normals_ID = dpg.add_checkbox(label= "Estimate normals", default_value=self.generateNormals, callback=self.set_Generate_Normals_enabled_cb)
-                self.use_compression_ID = dpg.add_checkbox(label= "Use Compression", default_value=self.useCompression, callback=self.set_Use_Compression_cb)
 
             dpg.add_spacer(height=5)
 

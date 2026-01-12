@@ -3,6 +3,7 @@ import sys
 import subprocess
 import pymeshlab as ml
 import numpy as np
+import math
 from threading import Lock
 from multiprocessing.pool import ThreadPool
 import Sequence_Metadata
@@ -101,7 +102,7 @@ class SequenceConverter:
 
         if(len(self.convertSettings.modelPaths) > 0):
             self.process_models()
-        if(len(self.convertSettings.imagePaths) > 0):
+        if(len(self.convertSettings.imagePaths) > 0 and (self.convertSettings.convertToDDS or self.convertSettings.convertToASTC)):
             self.process_images()
         
         return True
@@ -234,15 +235,15 @@ class SequenceConverter:
             pointcloud = True
 
         if(ms.current_mesh().has_wedge_tex_coord() == True or ms.current_mesh().has_vertex_tex_coord() == True):
-            uvs = True
+            hasUvs = True
         else:
-            uvs = False
+            hasUvs = False
 
         if(listIndex == 0):
             self.convertSettings.isPointcloud = pointcloud
-            self.convertSettings.hasUVs = uvs
+            self.convertSettings.hasUVs = hasUvs
         else:
-            if(self.convertSettings.hasUVs != uvs):
+            if(self.convertSettings.hasUVs != hasUvs):
                 # The sequence has different attributes, which is not allowed
                 self.processFinishedCB(True, "Error: Some frames with UVs, some without. All frames need to be consistent with this attribute!")
                 self.unlockLoadMeshLock()
@@ -255,19 +256,30 @@ class SequenceConverter:
         if(self.convertSettings.mergePoints):
             ms.apply_filter('meshing_merge_close_vertices', threshold= ml.PercentageValue (self.convertSettings.mergeDistance))
 
-
-        normals = None
-        normals = ms.current_mesh().vertex_normal_matrix().astype(np.float32)
-        if(len(normals) > 0 and self.convertSettings.saveNormals):
-            self.convertSettings.hasNormals = True
-        else:
-            self.convertSettings.hasNormals = False
-
         #There is a chance that the file might have wedge tex
         #coordinates which are unsupported in Unity, so we convert them
         #Also we need to ensure that our mesh contains only triangles!
+
+        #It is important that we do this BEFORE we get any mesh data, as it can drastically change the vertex count!
         if(self.convertSettings.isPointcloud == False and ms.current_mesh().has_wedge_tex_coord() == True):
             ms.compute_texcoord_transfer_wedge_to_vertex()
+
+        normals = None
+        normals = ms.current_mesh().vertex_normal_matrix().astype(np.float32)
+
+        self.convertSettings.hasNormals = False
+        if(self.convertSettings.generateNormals):
+            self.convertSettings.hasNormals = True
+
+        if(len(normals) > 0 and self.convertSettings.saveNormals):
+            
+            # Check if there are actual normals inside the array, or if it is just empty
+            x = normals[0][0]
+            y = normals[0][1]
+            z = normals[0][2]
+
+            if(not (math.isclose(x, 0.0) and math.isclose(y, 0.0) and math.isclose(z, 0.0))):
+                self.convertSettings.hasNormals = True
 
 
         # We'll later flip the x-Axis. For meshes, this also requires us to flip the face orientation
@@ -314,15 +326,14 @@ class SequenceConverter:
         faces = None
         uvs = None
 
+        vertices = ms.current_mesh().vertex_matrix().astype(np.float32)
+
         #Load type specific attributes
         if(self.convertSettings.isPointcloud == True):
-            vertices = ms.current_mesh().vertex_matrix().astype(np.float32)
             vertice_colors = ms.current_mesh().vertex_color_array()
 
         else:
-            vertices = ms.current_mesh().vertex_matrix().astype(np.float32)
             faces = ms.current_mesh().face_matrix()
-
             if(self.convertSettings.hasUVs == True):
                 uvs = ms.current_mesh().vertex_tex_coord_matrix().astype(np.float32)
 
@@ -367,26 +378,17 @@ class SequenceConverter:
             header = "ply" + "\n"
             header += "format binary_little_endian 1.0" + "\n"
             header += "comment Exported for use in Unity Geometry Streaming Plugin" + "\n"
-
             header += "element vertex " + str(vertexCount) + "\n"
-            if(self.convertSettings.useCompression):
-                header += "property half x" + "\n"
-                header += "property half y" + "\n"
-                header += "property half z" + "\n"
-            else:
-                header += "property float x" + "\n"
-                header += "property float y" + "\n"
-                header += "property float z" + "\n"
 
-            if(self.convertSettings.hasNormals):
-                if(self.convertSettings.useCompression):
-                    header += "property half nx" + "\n"
-                    header += "property half ny" + "\n"
-                    header += "property half nz" + "\n"
-                else:
-                    header += "property float nx" + "\n"
-                    header += "property float ny" + "\n"
-                    header += "property float nz" + "\n"
+            propertyText = "property " + "half" if self.convertSettings.useCompression else "float" + " "
+
+            header += propertyText + "x" + "\n"
+            header += propertyText + "y" + "\n"
+            header += propertyText + "z" + "\n"
+
+            header += propertyText + "nx" + "\n"
+            header += propertyText + "ny" + "\n"
+            header += propertyText + "nz" + "\n"
 
             if(self.convertSettings.isPointcloud == True):
                 header += "property uchar red" + "\n"
@@ -397,8 +399,9 @@ class SequenceConverter:
 
             else:
                 if(self.convertSettings.hasUVs == True):
-                    header += "property float s" + "\n"
-                    header += "property float t" + "\n"
+                    header += propertyText + "s" + "\n"
+                    header += propertyText + "t" + "\n"
+
                 header += "element face " + str(len(faces)) + "\n"
                 header += "property list uchar uint vertex_indices" + "\n"
 
@@ -435,9 +438,8 @@ class SequenceConverter:
             if(self.convertSettings.hasNormals):
 
                 if(self.convertSettings.useCompression):
-                    #Squash normals into half precision for compression
-                    normals = normals.astype(dtype=np.float16, casting='same_kind')
-                
+                    normals = normals.astype(dtype=np.float16, casting='same_kind')  #Squash normals into half precision
+
                 verticeNormalsBytes = np.frombuffer(normals.tobytes(), dtype=np.uint8)
 
                 if(self.convertSettings.useCompression):
@@ -476,8 +478,16 @@ class SequenceConverter:
             else:
 
                 if(self.convertSettings.hasUVs == True):
+                    if(self.convertSettings.useCompression):
+                        uvs = uvs.astype(dtype=np.float16, casting='same_kind') 
+
                     uvsBytes = np.frombuffer(uvs.tobytes(), dtype=np.uint8)
-                    uvsBytes = np.reshape(uvsBytes, (-1, 8))
+
+                    if(self.convertSettings.useCompression):
+                        uvsBytes = np.reshape(uvsBytes, (-1, 4)) # 2 * 2 bytes per uv
+                    else:
+                        uvsBytes = np.reshape(uvsBytes, (-1, 8))
+
                     byteCombination.append(uvsBytes)
 
                 #Indices
