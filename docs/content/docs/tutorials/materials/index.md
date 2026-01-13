@@ -82,7 +82,7 @@ You'll see three different sets of shaders, _Legacy_, _Shadergraph_ and _Polyspa
 
 ### Pointcloud normals
 
-![Pointcloud normals example](pointcloud_normals.jpg)
+![Pointcloud normals example](pointcloud_normals.png)
 
 In comparison to meshes, pointcloud sequences usually don't contain any normals. If you want your pointcloud sequence to receive lighting and shadows inside Unity, you need to generate normals. The sequence converter comes with a build-in functionality to estimate pointcloud normals and save them in the sequence.
 
