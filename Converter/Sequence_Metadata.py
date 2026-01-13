@@ -40,6 +40,7 @@ class MetaData():
         boundsCenter, boundsSize = self.get_metadata_bounds()
 
         asDict = {
+            "sequenceVersion" : "1.2.2",
             "geometryType" : int(self.geometryType),
             "textureMode" : int(self.textureMode),
             "DDS" : self.DDS,
