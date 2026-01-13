@@ -28,6 +28,7 @@ class ConverterUI:
     decimation_percentage_ID = 0
     save_normals_ID = 0
     generate_normals_ID = 0
+    invert_normals_ID = 0
     use_compression_ID = 0
 
     ### +++++++++++++++++++++++++  PACKAGE INTO SINGLE WINDOWS EXECUTABLE ++++++++++++++++++++++++++++++++++
@@ -67,6 +68,7 @@ class ConverterUI:
     convertToSRGB = False
     decimatePointcloud = False
     generateNormals = False
+    invertNormals = False
     useCompression = False
     save_normals = False
     decimatePercentage = 100
@@ -123,6 +125,17 @@ class ConverterUI:
         self.save_normals = app_data
         dpg.set_value(self.save_normals_ID, app_data)
         self.write_settings_string("generateNormals", str(app_data))
+
+        if not app_data:
+            dpg.hide_item(self.invert_normals_ID)
+            dpg.set_value(self.invert_normals_ID, False)
+            self.invertNormals = False
+
+        else:
+            dpg.show_item(self.invert_normals_ID)
+
+    def set_Invert_Normals_enabled_cb(self, sender, app_data):
+        self.invertNormals = app_data
 
     def set_Use_Compression_cb(self, sender, app_data):
         self.useCompression = app_data
@@ -194,6 +207,7 @@ class ConverterUI:
         convertSettings.decimatePercentage = self.decimatePercentage
         convertSettings.saveNormals = self.save_normals
         convertSettings.generateNormals = self.generateNormals
+        convertSettings.invertNormals = self.invertNormals
         convertSettings.useCompression = self.useCompression
         convertSettings.mergePoints = self.mergePoints
         convertSettings.mergeDistance = self.mergeDistance
@@ -540,7 +554,11 @@ class ConverterUI:
                     self.pointcloud_merge_ID = dpg.add_checkbox(label= "Merge Points by Distance: ", default_value=self.mergePoints, callback=self.set_Merge_Points_cb)
                     self.merge_distance_ID = dpg.add_input_float(label= " ", default_value=self.mergeDistance , callback=self.set_Merge_Distance_cb, min_value=0, width= 200)
 
-                self.generate_normals_ID = dpg.add_checkbox(label= "Estimate normals", default_value=self.generateNormals, callback=self.set_Generate_Normals_enabled_cb)
+                with dpg.group(horizontal=True):
+                    self.generate_normals_ID = dpg.add_checkbox(label= "Estimate normals", default_value=self.generateNormals, callback=self.set_Generate_Normals_enabled_cb)
+                    self.invert_normals_ID = dpg.add_checkbox(label= "Invert normals", default_value=self.invertNormals, callback=self.set_Invert_Normals_enabled_cb)
+                    dpg.hide_item(self.invert_normals_ID)
+
 
             dpg.add_spacer(height=5)
 

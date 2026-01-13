@@ -30,6 +30,7 @@ class SequenceConverterSettings:
     decimatePercentage = 0
     saveNormals = False
     generateNormals = False
+    invertNormals = False
     useCompression = False
     mergePoints = False
     mergeDistance = 0
@@ -312,6 +313,9 @@ class SequenceConverter:
                 if(dot_product < 0.5):
                     normals = normals * -1
                     averageNormal = np.multiply(averageNormal, -1)
+
+                if(self.convertSettings.invertNormals):
+                    normals = normals * -1
 
             self.lastAverageNormal = averageNormal
             self.firstEstimation = False
