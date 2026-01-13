@@ -81,11 +81,13 @@ And for images:
 3. The converter provides some settings which can be used to modify the sequence:
 ![Converter Select Input](Converter_Options.png)
 
+- **Use compression:** Sequences are compressed to around half their size. Works for meshes and pointclouds
 - **Save normals:** When enabled, the normals of the mesh or pointcloud sequence are exported. Only recommended to enable if you have custom normals
 - **Pointcloud Settings:** Only affects pointclouds
   - **Decimate Pointcloud:** You can downsize your pointcloud sequence with this option. The value determines the percentage of points left after conversion. E.g. setting the value to 30% will decrease the points of the sequence by 70%.
   - **Merge Points by Distance:** Merges points that are close together. The higher the value, the more points will be merged. Useful if the data contains duplicated points
   - **Estimate Normals:** Pointclouds usually don't come with normals. When this option is enabled, the normals will be reasonably estimated.
+    - **Invert Normals:** This settings is only visible when *Estimate Normals* is enabled. Use if the generated normals are not facing the correct direction.
 - **Texture Settings** Only affects mesh sequences with textures
   - **Generate textures for desktop devices (DDS):** This converts the textures into a format for desktop GPUs. Recommended to leave on, even when you only build for mobile devices, otherwise textures won't show up in the Unity editor.
   - **Generate textures for mobile devices (ASTC):** If you plan to distribute your application on mobile devices (Android, IPhone, Meta Quest, Apple Vision Pro) and use textured meshes, you need to also generate .astc textures. You only need to transfer the .astc textures to your device, but not the .dds textures.
@@ -177,6 +179,7 @@ The sequence.json file contains information about your sequence in the following
 //three frames
 
 {
+  "sequenceVersion": "1.2.2", //Should be the same as the package version
   "geometryType": 2, //0 = Pointcloud, 1 = Mesh, 2 = Textured Mesh
   "textureMode": 2, //0 = No Textures, 1 = One texture, 2 = Per Frame textures
   "DDS": true, //Does this sequence have .dds textures?
@@ -185,7 +188,8 @@ The sequence.json file contains information about your sequence in the following
   "hasNormals": false, //Are per-vertex normals used?
   "maxVertexCount": 26545, //The vertice count of the mesh/pointcloud with the highest vertice count in the whole sequence
   "maxIndiceCount": 55423, //The indice count of the mesh/pointcloud with the highest indice count in the whole sequence
-  "maxBounds": [325.8575134277344, 295.0, 2103.5478515625, -18.240554809570312, -238.74757385253906, 0], //Bounds of the mesh in the format: MaxboundX, MaxboundY, MaxboundZ, MinboundX, MinboundY, MinboundZ
+  "boundsCenter": {"x": -0.010323499999999985, "y": -0.043528500000000026, "z": 0.007380500000000012}, 
+  "boundsSize": {"x": 1.472131, "y": 1.386613, "z": 1.468193}, //The meshes/pointclouds center and bounds in world coordinates
   "textureWidth": 512, //The width of the texture(s)
   "textureHeight": 512, //The hight of the texture(s)
   "textureSizeDDS": 2097152, //The size of a single .dds texture in bytes

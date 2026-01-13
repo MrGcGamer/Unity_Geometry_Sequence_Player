@@ -37,6 +37,11 @@ Go to the **Geometry Sequence Stream** component that can be found on the same G
 
 If you have a mesh sequence with textures, you can also control to which texture slot the texture will be applied. By default, textures will always be applied to the Main/Albedo/Diffuse slot, which is defined in the shader as _\_MainTexture_. But you can also apply the texture to any other slot. Either you select one or more predefined slots in the **Apply to texture slots** variable, or you enter the name of the texture slot into the **Custom texture slots** list. This has to be the name of the texture slot as found in the **shader**, not the material! Shader texture slot variables are often prefixed with an _Underscore.
 
+### Mesh normals
+
+By default, mesh normals won't be saved in the sequence, as it increases the sequence size and is not necessary in most cases. Unity will generate
+new normals during playback. However, if you need precise normals (for example for hard-surface meshes), you can also keep the original normals, by activating the "Save Normals" option in the sequence converter before converting your sequence.
+
 ## Pointcloud sequences
 
 Changing the appearance of the pointcloud works very differently compared to meshes, as pointclouds require special shaders for rendering correctly. If you don't assign a custom pointcloud material, there are some predefined settings you can use to easily and quickly the appearance. These settings can be found under the **Geometry Sequence Stream** component and include the **Point Size** as well as the **Point Emission Strength**.
@@ -74,3 +79,11 @@ If you don't set a custom material, a default pointcloud material will be loaded
 `Packages > Geometry Sequence Player > Runtime > Shader > Resources`
 
 You'll see three different sets of shaders, _Legacy_, _Shadergraph_ and _Polyspatial_. Clone one of the shaders appropriate for your chosen render path. Then, create a material that uses your freshly cloned shader and apply it under **Custom Material**. For quick iteration, we recommend to disable the **Instantiate Shader** option. If you're a little bit familiar with Shaderlab/Shadergraph, you should be able to get an idea of how the shaders work, by taking a look at the commented code/graph.
+
+### Pointcloud normals
+
+![Pointcloud normals example](pointcloud_normals.jpg)
+
+In comparison to meshes, pointcloud sequences usually don't contain any normals. If you want your pointcloud sequence to receive lighting and shadows inside Unity, you need to generate normals. The sequence converter comes with a build-in functionality to estimate pointcloud normals and save them in the sequence.
+
+[More info](/Unity_Geometry_Sequence_Player/docs/tutorials/preparing-your-sequences/#using-the-converter/)
