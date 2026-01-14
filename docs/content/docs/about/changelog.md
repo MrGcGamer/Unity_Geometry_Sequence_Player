@@ -13,6 +13,10 @@ weight: 420
 toc: true
 ---
 
+### Version 1.2.3
+
+This version fixes several bugs introduced in version 1.2.2
+
 ### Version 1.2.2
 
 This version contains several new features, contributed by [Anwar Lu](https://github.com/MrGcGamer):
